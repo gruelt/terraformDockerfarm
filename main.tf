@@ -14,16 +14,22 @@ provider "docker" {
   host = "ssh://root@docker-dev.emse.fr:22"
 }
 
-variable "wps"{
-        type = map(string)
-        default={
-                "dev1" = "toto"
-                "dev2" = "tata"
-#                "dev3" = "titi"
-#               "thomas" = "mypass"
-#               "rapido" = "rapidosss"
-        }
+variable "wordpresses" {
+  description = "Map of project names to configuration."
+  type        = map
+  default     = {
+    intranet = {
+      name= "Intranet"
+      dns="intranet"
+    },
+//    extranet = {
+//      name= ""
+//      tag= ""
+//    }
+  }
 }
+Copy
+
 
 variable "domain"{
   type = string
