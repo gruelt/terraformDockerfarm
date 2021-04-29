@@ -25,7 +25,10 @@ variable "wps"{
         }
 }
 
-
+variable "domain"{
+  type = string
+  default ="docker-dev.emse.fr"
+}
 
 resource "docker_network" "private_network" {
   
@@ -50,7 +53,7 @@ resource "docker_volume" "wp_vol_html" {
 }
 
 
-
+//Database
 resource "docker_container" "db" {
 
   name  = "db"
@@ -86,7 +89,7 @@ resource "docker_container" "db" {
 }
 
 
-
+//Lemp + wordpress
 resource "docker_container" "wordpress" {
 
   name  = "wordpress"
@@ -105,7 +108,9 @@ resource "docker_container" "wordpress" {
 
     "WORDPRESS_DB_PASSWORD=examplepass",
 
-    "WORDPRESS_DB_NAME=wordpress"
+    "WORDPRESS_DB_NAME=wordpress",
+
+    "VIRTUAL_HOST=wp.${var.domain}"
 
 
 
@@ -130,3 +135,40 @@ resource "docker_container" "wordpress" {
   }
 
 }
+
+resource "docker_container" "reverseproxy"{
+  name="Reverse_Proxy_Jwilder"
+
+  image="jwilder/nginx-proxy"
+
+  restart="always"
+
+  network_mode = "wp_net"
+
+  ports {
+
+    internal = "80"
+
+    external = "80"
+
+  }
+
+    mounts {
+
+    type = "bind"
+
+    source = "/var/run/docker.sock"
+
+    target = "/tmp/docker.sock"
+
+
+
+  }
+
+
+
+
+}
+
+
+
