@@ -11,7 +11,8 @@ terraform {
 
 # Configure the Docker provider
 provider "docker" {
-  host = "ssh://root@docker-dev.emse.fr:22"
+  //host = "ssh://root@docker-dev.emse.fr:22"
+  host = "ssh://root@192.168.0.150:22"
 }
 
 variable "wordpresses" {
@@ -21,10 +22,12 @@ variable "wordpresses" {
     intranet = {
       name= "Intranet"
       dns="intranet"
+      mysql_pass="azertyu"
     },
     extranet = {
       name= "Extranet"
       dns="extranet"
+      mysql_pass="azertyiop"
     },
   }
 }
@@ -85,13 +88,13 @@ resource "docker_container" "db" {
 
   env = [
 
-     "MYSQL_ROOT_PASSWORD=rootpassword",
+     "MYSQL_ROOT_PASSWORD=r${var.wordpresses[each.key].mysql_pass}!",
 
      "MYSQL_DATABASE=wordpress",
 
-     "MYSQL_USER=exampleuser",
+     "MYSQL_USER=${var.wordpresses[each.key].dns}",
 
-     "MYSQL_PASSWORD=examplepass"
+     "MYSQL_PASSWORD=${var.wordpresses[each.key].mysql_pass}"
 
   ]
 
@@ -101,7 +104,9 @@ resource "docker_container" "db" {
 //Lemp + wordpress
 resource "docker_container" "wordpress" {
 
-  name  = "wordpress"
+  for_each = var.wordpresses
+
+  name  = "wordpress_${var.wordpresses[each.key].dns}"
 
   image = "wordpress:latest"
 
@@ -111,11 +116,11 @@ resource "docker_container" "wordpress" {
 
   env = [
 
-    "WORDPRESS_DB_HOST=db",
+    "WORDPRESS_DB_HOST=db_${var.wordpresses[each.key].dns}",
 
-    "WORDPRESS_DB_USER=exampleuser",
+    "WORDPRESS_DB_USER=${var.wordpresses[each.key].dns}",
 
-    "WORDPRESS_DB_PASSWORD=examplepass",
+    "WORDPRESS_DB_PASSWORD=${var.wordpresses[each.key].mysql_pass}",
 
     "WORDPRESS_DB_NAME=wordpress",
 
@@ -132,7 +137,7 @@ resource "docker_container" "wordpress" {
 
     target = "/var/www/html"
 
-    source = "wp_vol_html"
+    source = "wp_vol_html_${var.wordpresses[each.key].dns}"
 
   }
 
@@ -151,7 +156,7 @@ resource "docker_container" "reverseproxy"{
 
     internal = "80"
 
-    external = "80"
+    external = "9080"
 
   }
 
@@ -169,6 +174,25 @@ resource "docker_container" "reverseproxy"{
 
 
 
+
+}
+
+//grafana
+resource "docker_container" "grafana" {
+  name="grafana"
+
+  image="grafana/grafana"
+
+    ports {
+
+    internal = "3000"
+
+    external = "3000"
+
+  }
+  env=[
+    "VIRTUAL_HOST=graf.${var.domain}"
+  ]
 
 }
 
