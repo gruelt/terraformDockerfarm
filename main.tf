@@ -22,13 +22,13 @@ variable "wordpresses" {
       name= "Intranet"
       dns="intranet"
     },
-//    extranet = {
-//      name= ""
-//      tag= ""
-//    }
+    extranet = {
+      name= "Extranet"
+      dns="extranet"
+    },
   }
 }
-Copy
+
 
 
 variable "domain"{
@@ -45,8 +45,8 @@ resource "docker_network" "private_network" {
 
 
 resource "docker_volume" "wp_vol_db" {
-
-  name = "wp_vol_db"
+  for_each = var.wordpresses
+  name = "wp_vol_db_${var.wordpresses[each.key].dns}"
 
 }
 
@@ -54,7 +54,8 @@ resource "docker_volume" "wp_vol_db" {
 
 resource "docker_volume" "wp_vol_html" {
 
-  name = "wp_vol_html"
+    for_each = var.wordpresses
+  name = "wp_vol_html_${var.wordpresses[each.key].dns}"
 
 }
 
@@ -62,7 +63,9 @@ resource "docker_volume" "wp_vol_html" {
 //Database
 resource "docker_container" "db" {
 
-  name  = "db"
+  for_each = var.wordpresses
+
+  name  = "db_${var.wordpresses[each.key].dns}"
 
   image = "mariadb"
 
@@ -76,7 +79,7 @@ resource "docker_container" "db" {
 
     target = "/var/lib/mysql"
 
-    source = "wp_vol_db"
+    source = "wp_vol_db_${var.wordpresses[each.key].dns}"
 
   }
 
@@ -122,13 +125,6 @@ resource "docker_container" "wordpress" {
 
   ]
 
-  ports {
-
-    internal = "80"
-
-    external = "8080"
-
-  }
 
   mounts {
 
